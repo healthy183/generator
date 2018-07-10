@@ -50,6 +50,14 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
 
     private static final String CONVERT =  "Convert";
 
+    private static final String LIST =  "List";
+
+    private static final String LIST_PACKAGE =  "java.util.List";
+
+    private static final String ARRAY_PACKAGE =  "java.util.ArrayList";
+
+    private static final String BLANK_STR = "";
+
     public BaseRecordGenerator() {
         super();
     }
@@ -79,6 +87,8 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
         //自定义生成Convert
         baseRecordType = introspectedTable.getBaseRecordType()+CONVERT;
         TopLevelClass topLevelClassConvert = getTopLevelConvertClass(plugins, commentGenerator, baseRecordType);
+        topLevelClassConvert.addImportedType(LIST_PACKAGE); //导入 java.util.List
+        topLevelClassConvert.addImportedType(ARRAY_PACKAGE); //导入 java.util.List
         answer.add(topLevelClassConvert);
 
         //请求参数
@@ -93,15 +103,62 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
         String responseShortName = returnJavaType.getShortName();
         String response = MyStringUtils.uncapitalize(responseShortName); //tableName
 
-        String toDTO = "toDTO";//生成 toDTO(...)
+        String toDTO = "toDTO"; //生成 toDTO(...)
         Method toDTOmethod = convertMethod(toDTO,requestJavaType,request,returnJavaType,responseShortName,response);
         topLevelClassConvert.addMethod(toDTOmethod);
 
-        String toPO = "toPO";//生成 toPo(...)
+        String toPO = "toPO"; //生成 toPo(...)
         Method method = convertMethod(toPO,returnJavaType,response,requestJavaType,requestShortName,request);
         topLevelClassConvert.addMethod(method);
+
+        Method toDTOListMethod = convertListMethod(toDTO, requestJavaType, returnJavaType);
+        topLevelClassConvert.addMethod(toDTOListMethod);
+
+        Method toPOListMethod = convertListMethod(toPO, returnJavaType,requestJavaType);
+        topLevelClassConvert.addMethod(toPOListMethod);
         return answer;
     }
+
+
+    public static Method convertListMethod(String methodName,FullyQualifiedJavaType requestJavaType,FullyQualifiedJavaType returnJavaType){
+
+        Method method = new Method();
+        method.setVisibility(JavaVisibility.PUBLIC);
+        method.setStatic(true);
+        method.setName(methodName+"List");
+        //入参
+        FullyQualifiedJavaType requestParam = new FullyQualifiedJavaType(LIST);
+        requestParam.addTypeArgument(requestJavaType);
+        String request = MyStringUtils.uncapitalize(requestJavaType.getShortName());
+        String requestListName = request+LIST;
+        Parameter parameter = new Parameter(requestParam,requestListName);
+        method.addParameter(parameter);
+        //返参
+        FullyQualifiedJavaType reponseParam = new FullyQualifiedJavaType(LIST);
+        reponseParam.addTypeArgument(returnJavaType);
+        String response = MyStringUtils.uncapitalize(returnJavaType.getShortName());
+        method.setReturnType(reponseParam);
+
+        String responeListName = response+LIST;
+        method.addBodyLine("List<"+returnJavaType.getShortName()+"> "+responeListName+" = new ArrayList<>();");
+        method.addBodyLine("if("+requestListName+" != null){");
+        method.addBodyLine(BLANK_STR+"for("+requestJavaType.getShortName()+" "+request+" : "+requestListName+"){");
+        method.addBodyLine(BLANK_STR+BLANK_STR+responeListName+".add("+methodName+"("+request+"));");
+        method.addBodyLine(BLANK_STR+"}");
+        method.addBodyLine("}");
+        //返回
+        StringBuilder returnSB = new StringBuilder();
+        returnSB.append("return "); //$NON-NLS-1$
+        returnSB.append(responeListName);
+        returnSB.append(";");
+        method.addBodyLine(returnSB.toString());
+        return method;
+
+    }
+
+
+
+
 
     private Method convertMethod(String methodName,
                                  FullyQualifiedJavaType requestJavaType,
@@ -110,7 +167,6 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
                                  String responseShortName,
                                  String response) {
         Method method = new Method();
-
         method.setVisibility(JavaVisibility.PUBLIC);
         method.setStatic(true);
         method.setName(methodName);
