@@ -1,5 +1,5 @@
 /**
- *    Copyright 2006-2017 the original author or authors.
+ *    Copyright 2006-2018 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -225,7 +225,7 @@ public class MyBatisGeneratorMojo extends AbstractMojo {
 
             MyBatisGenerator myBatisGenerator = new MyBatisGenerator(config,
                     callback, warnings);
-
+            //上面执行mybatis-generator-maven-plugin:version:generate
             myBatisGenerator.generate(new MavenProgressCallback(getLog(),
                     verbose), contextsToRun, fullyqualifiedTables);
 

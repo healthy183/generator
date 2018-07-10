@@ -439,6 +439,20 @@ public class DefaultCommentGenerator implements CommentGenerator {
         topLevelClass.addImportedType("lombok.AccessLevel");
     }
 
+
+    @Override
+    public void addLombokData(TopLevelClass topLevelClass) {
+        topLevelClass.addAnnotation("@Data");
+        topLevelClass.addImportedType("lombok.Data");
+    }
+
+    @Override
+    public void addLombokToString(TopLevelClass topLevelClass,Boolean callSuper) {
+        topLevelClass.addAnnotation("@ToString(callSuper = "+callSuper+")");
+        topLevelClass.addImportedType("lombok.ToString");
+    }
+
+
     private String getGeneratedAnnotation(String comment) {
         StringBuilder buffer = new StringBuilder();
         buffer.append("@Generated("); //$NON-NLS-1$

@@ -282,4 +282,9 @@ public interface CommentGenerator {
      * @param accessLevel
      */
     void addLombokConstructor(TopLevelClass topLevelClass, ConstructorTypeEnums constructorType, JavaVisibility accessLevel);
+
+
+    public void addLombokData(TopLevelClass topLevelClass);
+
+    public void addLombokToString(TopLevelClass topLevelClass,Boolean callSuper);
 }
