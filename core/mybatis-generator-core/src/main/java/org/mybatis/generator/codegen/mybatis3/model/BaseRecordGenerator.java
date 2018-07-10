@@ -60,6 +60,14 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
 
     private static final String BLANK_STR = "";
 
+    private static final String MANAGER =  "Manager";
+
+    private static final String SLF4J = "lombok.extern.slf4j.Slf4j";
+
+    private static final String COMPONENT = " org.springframework.stereotype.Component";
+
+
+
     public BaseRecordGenerator() {
         super();
     }
@@ -84,7 +92,7 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
         }
         //获取targetPackage配置的上级包路径
         String dtoBaseRecordType = getPreviousPackage();
-        //PO类名
+        //自定义生成DTO类名
         String domainObjectName = introspectedTable.getFullyQualifiedTable().getDomainObjectName();
         dtoBaseRecordType  =  dtoBaseRecordType +"."+DTO.toLowerCase()+"."+domainObjectName+DTO;
         TopLevelClass topLevelClassDTO = getTopLevelClass(plugins, commentGenerator, dtoBaseRecordType);
@@ -92,27 +100,41 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
         //自定义生成Convert
         TopLevelClass convertClazz = createConvertClazz(plugins, commentGenerator);
         answer.add(convertClazz);
+        //自定义生成Manager
+        TopLevelClass managerClazz = createManagerClazz(plugins, commentGenerator);
+        answer.add(managerClazz);
         return answer;
     }
 
-    private String getPreviousPackage(){
-        String dtoBaseRecordType;
-        JavaModelGeneratorConfiguration javaModelGeneratorConfiguration = context.getJavaModelGeneratorConfiguration();
-        String targetPackage = javaModelGeneratorConfiguration.getTargetPackage();
-        if(targetPackage.lastIndexOf(".") != -1){
-            dtoBaseRecordType = targetPackage.substring(0,targetPackage.lastIndexOf("."));
-        }else{
-            dtoBaseRecordType = targetPackage;
-        }
-        return dtoBaseRecordType;
+    private TopLevelClass createManagerClazz(Plugin plugins, CommentGenerator commentGenerator) {
+
+        String domainObjectName = introspectedTable.getFullyQualifiedTable().getDomainObjectName();
+        //生成类
+        String baseRecordType = getPreviousPackage()+"."+MANAGER.toLowerCase()+"."+domainObjectName+MANAGER;
+        TopLevelClass topLevelClassManager = getSimpleTopLevelClass(commentGenerator, baseRecordType);
+        //Lombok和Spring支持
+        commentGenerator.addLombokSLF4J(topLevelClassManager);
+        commentGenerator.addSpringComponent(topLevelClassManager);
+
+
+        Field field = new Field();
+        field.setVisibility(JavaVisibility.PRIVATE);
+        String mapperClazz = getPreviousPackage()+".mapper."+domainObjectName+"Mapper";
+        FullyQualifiedJavaType fqjt = new FullyQualifiedJavaType(mapperClazz);
+        field.setType(fqjt);
+        field.setName(MyStringUtils.uncapitalize(fqjt.getShortName()));
+        field.addJavaDocLine("@Autowired");
+        topLevelClassManager.addField(field); //类添加全局变量
+        topLevelClassManager.addImportedType("org.springframework.beans.factory.annotation");
+        return topLevelClassManager;
     }
+
 
 
     private TopLevelClass createConvertClazz(Plugin plugins, CommentGenerator commentGenerator) {
 
         String domainObjectName = introspectedTable.getFullyQualifiedTable().getDomainObjectName();
         String baseRecordType =   getPreviousPackage()+"."+CONVERT.toLowerCase()+"."+domainObjectName+CONVERT;
-        //String baseRecordType = introspectedTable.getBaseRecordType();
         TopLevelClass topLevelClassConvert = getTopLevelConvertClass(plugins, commentGenerator, baseRecordType);
         topLevelClassConvert.addImportedType(LIST_PACKAGE); //导入 java.util.List
         topLevelClassConvert.addImportedType(ARRAY_PACKAGE); //导入 java.util.List
@@ -232,6 +254,23 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
         //添加Lombok Constructor构造函数
         commentGenerator.addLombokConstructor(topLevelClass, ConstructorTypeEnums.NOARGS,JavaVisibility.PRIVATE);
         return topLevelClass;
+    }
+
+
+    /**
+     *获取targetPackage配置的上级包路径
+     * @return
+     */
+    private String getPreviousPackage(){
+        String dtoBaseRecordType;
+        JavaModelGeneratorConfiguration javaModelGeneratorConfiguration = context.getJavaModelGeneratorConfiguration();
+        String targetPackage = javaModelGeneratorConfiguration.getTargetPackage();
+        if(targetPackage.lastIndexOf(".") != -1){
+            dtoBaseRecordType = targetPackage.substring(0,targetPackage.lastIndexOf("."));
+        }else{
+            dtoBaseRecordType = targetPackage;
+        }
+        return dtoBaseRecordType;
     }
 
     /**

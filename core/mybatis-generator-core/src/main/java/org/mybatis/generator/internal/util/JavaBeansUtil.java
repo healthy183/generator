@@ -207,16 +207,14 @@ public class JavaBeansUtil {
     public static Field getJavaBeansField(IntrospectedColumn introspectedColumn,
             Context context,
             IntrospectedTable introspectedTable) {
-        FullyQualifiedJavaType fqjt = introspectedColumn
-                .getFullyQualifiedJavaType();
+        FullyQualifiedJavaType fqjt = introspectedColumn.getFullyQualifiedJavaType();
         String property = introspectedColumn.getJavaProperty();
 
         Field field = new Field();
         field.setVisibility(JavaVisibility.PRIVATE);
         field.setType(fqjt);
         field.setName(property);
-        context.getCommentGenerator().addFieldComment(field,
-                introspectedTable, introspectedColumn);
+        context.getCommentGenerator().addFieldComment(field, introspectedTable, introspectedColumn);
 
         return field;
     }

@@ -452,6 +452,19 @@ public class DefaultCommentGenerator implements CommentGenerator {
         topLevelClass.addImportedType("lombok.ToString");
     }
 
+    @Override
+    public void addLombokSLF4J(TopLevelClass topLevelClass) {
+        topLevelClass.addAnnotation("@Slf4j");
+        topLevelClass.addImportedType("lombok.extern.slf4j.Slf4j");
+    }
+
+    @Override
+    public void addSpringComponent(TopLevelClass topLevelClass) {
+        topLevelClass.addAnnotation("@Component");
+        topLevelClass.addImportedType("org.springframework.stereotype.Component");
+
+    }
+
 
     private String getGeneratedAnnotation(String comment) {
         StringBuilder buffer = new StringBuilder();

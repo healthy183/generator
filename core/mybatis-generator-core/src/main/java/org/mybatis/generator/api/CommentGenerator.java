@@ -287,4 +287,9 @@ public interface CommentGenerator {
     public void addLombokData(TopLevelClass topLevelClass);
 
     public void addLombokToString(TopLevelClass topLevelClass,Boolean callSuper);
+
+    public void addLombokSLF4J(TopLevelClass topLevelClass);
+
+    public void addSpringComponent(TopLevelClass topLevelClass);
+
 }
