@@ -125,7 +125,8 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
         field.setName(MyStringUtils.uncapitalize(fqjt.getShortName()));
         field.addJavaDocLine("@Autowired");
         topLevelClassManager.addField(field); //类添加全局变量
-        topLevelClassManager.addImportedType("org.springframework.beans.factory.annotation");
+        topLevelClassManager.addImportedType("org.springframework.beans.factory.annotation.Autowired");
+        topLevelClassManager.addImportedType(mapperClazz);
         return topLevelClassManager;
     }
 
