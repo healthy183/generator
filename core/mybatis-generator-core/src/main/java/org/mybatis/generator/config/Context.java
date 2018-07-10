@@ -441,6 +441,7 @@ public class Context extends PropertyHolder {
             throws SQLException, InterruptedException {
 
         introspectedTables = new ArrayList<IntrospectedTable>();
+        //获取数据库字段类型和java类型对应关系( 默认 JavaTypeResolverDefaultImpl 的 typeMap(HashMap))
         JavaTypeResolver javaTypeResolver = ObjectFactory
                 .createJavaTypeResolver(this, warnings);
 
@@ -449,10 +450,10 @@ public class Context extends PropertyHolder {
         try {
             callback.startTask(getString("Progress.0")); //$NON-NLS-1$
             connection = getConnection();
-
+            //连接数据库
             DatabaseIntrospector databaseIntrospector = new DatabaseIntrospector(
                     this, connection.getMetaData(), javaTypeResolver, warnings);
-
+            //迭代 generatorConfig.xml 的 <table> 标签
             for (TableConfiguration tc : tableConfigurations) {
                 String tableName = composeFullyQualifiedTableName(tc.getCatalog(), tc
                                 .getSchema(), tc.getTableName(), '.');
@@ -469,8 +470,8 @@ public class Context extends PropertyHolder {
                 }
 
                 callback.startTask(getString("Progress.1", tableName)); //$NON-NLS-1$
-                List<IntrospectedTable> tables = databaseIntrospector
-                        .introspectTables(tc);
+                //获取 IntrospectedTableMyBatis3Impl 对象
+                List<IntrospectedTable> tables = databaseIntrospector.introspectTables(tc);
 
                 if (tables != null) {
                     introspectedTables.addAll(tables);
@@ -499,11 +500,10 @@ public class Context extends PropertyHolder {
             List<GeneratedJavaFile> generatedJavaFiles,
             List<GeneratedXmlFile> generatedXmlFiles, List<String> warnings)
             throws InterruptedException {
-
+        //加载 plugin
         pluginAggregator = new PluginAggregator();
         for (PluginConfiguration pluginConfiguration : pluginConfigurations) {
-            Plugin plugin = ObjectFactory.createPlugin(this,
-                    pluginConfiguration);
+            Plugin plugin = ObjectFactory.createPlugin(this, pluginConfiguration);
             if (plugin.validate(warnings)) {
                 pluginAggregator.addPlugin(plugin);
             } else {
@@ -513,27 +513,27 @@ public class Context extends PropertyHolder {
         }
 
         if (introspectedTables != null) {
+            /*ObjectFactory.createIntrospectedTableForValidation
+            根据 context.getTargetRuntime()的值 生成不同 IntrospectedTable
+            MyBatis3就是 IntrospectedTableMyBatis3Impl(IntrospectedTable子类)
+            */
             for (IntrospectedTable introspectedTable : introspectedTables) {
                 callback.checkCancel();
-
+                // 初始化 IntrospectedTableMyBatis3Impl
                 introspectedTable.initialize();
+                //生成  *Generator(xml,po,Mapper) 放进 各自全局变量List
+                //Generator中有全局变量保存 IntrospectedTableMyBatis3Impl
                 introspectedTable.calculateGenerators(warnings, callback);
-                generatedJavaFiles.addAll(introspectedTable
-                        .getGeneratedJavaFiles());
-                generatedXmlFiles.addAll(introspectedTable
-                        .getGeneratedXmlFiles());
-
-                generatedJavaFiles.addAll(pluginAggregator
-                        .contextGenerateAdditionalJavaFiles(introspectedTable));
-                generatedXmlFiles.addAll(pluginAggregator
-                        .contextGenerateAdditionalXmlFiles(introspectedTable));
+                //生成java GeneratedJavaFiles
+                generatedJavaFiles.addAll(introspectedTable.getGeneratedJavaFiles());  //创建 generatedJavaFile
+                generatedXmlFiles.addAll(introspectedTable.getGeneratedXmlFiles());
+                generatedJavaFiles.addAll(pluginAggregator.contextGenerateAdditionalJavaFiles(introspectedTable));
+                generatedXmlFiles.addAll(pluginAggregator.contextGenerateAdditionalXmlFiles(introspectedTable));
             }
         }
 
-        generatedJavaFiles.addAll(pluginAggregator
-                .contextGenerateAdditionalJavaFiles());
-        generatedXmlFiles.addAll(pluginAggregator
-                .contextGenerateAdditionalXmlFiles());
+        generatedJavaFiles.addAll(pluginAggregator.contextGenerateAdditionalJavaFiles());
+        generatedXmlFiles.addAll(pluginAggregator.contextGenerateAdditionalXmlFiles());
     }
 
     private Connection getConnection() throws SQLException {

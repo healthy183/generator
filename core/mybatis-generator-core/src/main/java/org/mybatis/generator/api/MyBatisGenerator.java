@@ -1,5 +1,5 @@
 /**
- *    Copyright 2006-2017 the original author or authors.
+ *    Copyright 2006-2018 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -254,6 +254,7 @@ public class MyBatisGenerator {
         callback.introspectionStarted(totalSteps);
 
         for (Context context : contextsToRun) {
+            //连接数据库 获取所有表信息
             context.introspectTables(callback, warnings,
                     fullyQualifiedTableNames);
         }
@@ -265,7 +266,7 @@ public class MyBatisGenerator {
         }
         callback.generationStarted(totalSteps);
 
-        for (Context context : contextsToRun) {
+        for (Context context : contextsToRun) { //生成java文件和xml对象
             context.generateFiles(callback, generatedJavaFiles,
                     generatedXmlFiles, warnings);
         }
@@ -295,8 +296,8 @@ public class MyBatisGenerator {
 
     private void writeGeneratedJavaFile(GeneratedJavaFile gjf, ProgressCallback callback)
             throws InterruptedException, IOException {
-        File targetFile;
-        String source;
+        File targetFile; //java目录
+        String source;  //代码原文
         try {
             File directory = shellCallback.getDirectory(gjf
                     .getTargetProject(), gjf.getTargetPackage());
@@ -319,13 +320,14 @@ public class MyBatisGenerator {
                             "Warning.2", targetFile.getAbsolutePath())); //$NON-NLS-1$
                 }
             } else {
+                //将 getFormattedContent 转成java文件格式
                 source = gjf.getFormattedContent();
             }
 
             callback.checkCancel();
             callback.startTask(getString(
                     "Progress.15", targetFile.getName())); //$NON-NLS-1$
-            writeFile(targetFile, source, gjf.getFileEncoding());
+            writeFile(targetFile, source, gjf.getFileEncoding()); //写入成文件
         } catch (ShellException e) {
             warnings.add(e.getMessage());
         }

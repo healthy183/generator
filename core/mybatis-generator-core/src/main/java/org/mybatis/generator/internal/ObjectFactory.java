@@ -70,7 +70,7 @@ public class ObjectFactory {
      * a generation run so that and change to the classloading configuration
      * will be reflected.  For example, if the eclipse launcher changes configuration
      * it might not be updated if eclipse hasn't been restarted.
-     * 
+     *
      */
     public static void reset() {
         externalClassLoaders.clear();
@@ -321,7 +321,7 @@ public class ObjectFactory {
         } else if ("MyBatis3DynamicSql".equalsIgnoreCase(type)) { //$NON-NLS-1$
             type = IntrospectedTableMyBatis3DynamicSqlImpl.class.getName();
         }
-
+        //反射创建对象
         IntrospectedTable answer = (IntrospectedTable) createInternalObject(type);
         answer.setContext(context);
 

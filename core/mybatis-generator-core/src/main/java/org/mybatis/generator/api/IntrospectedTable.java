@@ -458,10 +458,17 @@ public abstract class IntrospectedTable {
     }
 
     public void initialize() {
+        //以下三个calculate方法帮本类internalAttributes 键值对设值
         calculateJavaClientAttributes();
+        //ATTR_MYBATIS_DYNAMIC_SQL_SUPPORT_TYPE 包名.对象名DynamicSqlSupport
         calculateModelAttributes();
+        //ATTR_PRIMARY_KEY_TYPE  包名.对象名Key
+        //ATTR_BASE_RECORD_TYPE  包名.对象名  (这里加个dto?)
+        //ATTR_RECORD_WITH_BLOBS_TYPE  包名.对象名WithBLOBs
+        //ATTR_EXAMPLE_TYPE    包名.对象名Example
         calculateXmlAttributes();
-
+        //其他xml键值对
+        //ModelType默认Conditional(有什么用?)
         if (tableConfiguration.getModelType() == ModelType.HIERARCHICAL) {
             rules = new HierarchicalModelRules(this);
         } else if (tableConfiguration.getModelType() == ModelType.FLAT) {
@@ -469,7 +476,7 @@ public abstract class IntrospectedTable {
         } else {
             rules = new ConditionalModelRules(this);
         }
-
+        //加载插件
         context.getPlugins().initialized(this);
     }
 
@@ -993,8 +1000,7 @@ public abstract class IntrospectedTable {
     }
 
     public void setExampleType(String exampleType) {
-        internalAttributes
-                .put(InternalAttribute.ATTR_EXAMPLE_TYPE, exampleType);
+        internalAttributes.put(InternalAttribute.ATTR_EXAMPLE_TYPE, exampleType);
     }
 
     public void setMyBatis3FallbackSqlMapNamespace(String sqlMapNamespace) {

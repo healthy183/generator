@@ -1,5 +1,5 @@
 /**
- *    Copyright 2006-2017 the original author or authors.
+ *    Copyright 2006-2018 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -60,10 +60,7 @@ public class IntrospectedTableMyBatis3Impl extends IntrospectedTable {
     public void calculateGenerators(List<String> warnings,
             ProgressCallback progressCallback) {
         calculateJavaModelGenerators(warnings, progressCallback);
-        
-        AbstractJavaClientGenerator javaClientGenerator =
-                calculateClientGenerators(warnings, progressCallback);
-            
+        AbstractJavaClientGenerator javaClientGenerator = calculateClientGenerators(warnings, progressCallback);
         calculateXmlMapperGenerator(javaClientGenerator, warnings, progressCallback);
     }
 
@@ -128,8 +125,7 @@ public class IntrospectedTableMyBatis3Impl extends IntrospectedTable {
             ProgressCallback progressCallback) {
         if (getRules().generateExampleClass()) {
             AbstractJavaGenerator javaGenerator = new ExampleGenerator();
-            initializeAbstractGenerator(javaGenerator, warnings,
-                    progressCallback);
+            initializeAbstractGenerator(javaGenerator, warnings, progressCallback);
             javaModelGenerators.add(javaGenerator);
         }
 
@@ -171,27 +167,25 @@ public class IntrospectedTableMyBatis3Impl extends IntrospectedTable {
     @Override
     public List<GeneratedJavaFile> getGeneratedJavaFiles() {
         List<GeneratedJavaFile> answer = new ArrayList<GeneratedJavaFile>();
-
+        // javaGenerator 默认 BaseRecordGenerator
         for (AbstractJavaGenerator javaGenerator : javaModelGenerators) {
-            List<CompilationUnit> compilationUnits = javaGenerator
-                    .getCompilationUnits();
+            //通过getCompilationUnits() 也是通过 IntrospectedTable属性生成
+            List<CompilationUnit> compilationUnits = javaGenerator.getCompilationUnits();
+            //compilationUnit 具体配置表信息,字段
             for (CompilationUnit compilationUnit : compilationUnits) {
+                //生成 GeneratedJavaFile
                 GeneratedJavaFile gjf = new GeneratedJavaFile(compilationUnit,
-                        context.getJavaModelGeneratorConfiguration()
-                                .getTargetProject(),
+                        context.getJavaModelGeneratorConfiguration().getTargetProject(),
                                 context.getProperty(PropertyRegistry.CONTEXT_JAVA_FILE_ENCODING),
                                 context.getJavaFormatter());
                 answer.add(gjf);
             }
         }
-
         for (AbstractJavaGenerator javaGenerator : clientGenerators) {
-            List<CompilationUnit> compilationUnits = javaGenerator
-                    .getCompilationUnits();
+            List<CompilationUnit> compilationUnits = javaGenerator.getCompilationUnits();
             for (CompilationUnit compilationUnit : compilationUnits) {
                 GeneratedJavaFile gjf = new GeneratedJavaFile(compilationUnit,
-                        context.getJavaClientGeneratorConfiguration()
-                                .getTargetProject(),
+                        context.getJavaClientGeneratorConfiguration().getTargetProject(),
                                 context.getProperty(PropertyRegistry.CONTEXT_JAVA_FILE_ENCODING),
                                 context.getJavaFormatter());
                 answer.add(gjf);

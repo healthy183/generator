@@ -1,5 +1,5 @@
 /**
- *    Copyright 2006-2017 the original author or authors.
+ *    Copyright 2006-2018 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -45,6 +45,10 @@ import org.mybatis.generator.codegen.RootClassInfo;
  */
 public class BaseRecordGenerator extends AbstractJavaGenerator {
 
+    private static final String DTO =  "DTO";
+
+    private static final String CONVERT =  "Convert";
+
     public BaseRecordGenerator() {
         super();
     }
@@ -54,40 +58,64 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
         FullyQualifiedTable table = introspectedTable.getFullyQualifiedTable();
         progressCallback.startTask(getString(
                 "Progress.8", table.toString())); //$NON-NLS-1$
-        Plugin plugins = context.getPlugins();
+        Plugin plugins = context.getPlugins(); //容器全局插件
+        //注释生成器
         CommentGenerator commentGenerator = context.getCommentGenerator();
 
-        FullyQualifiedJavaType type = new FullyQualifiedJavaType(
-                introspectedTable.getBaseRecordType());
+        //设值类型信息 包名.类名
+        String baseRecordType = introspectedTable.getBaseRecordType();
+        //生成具体类
+        TopLevelClass topLevelClass = getTopLevelClass(plugins, commentGenerator, baseRecordType);
+        //加载插件
+        List<CompilationUnit> answer = new ArrayList<CompilationUnit>();
+        if (context.getPlugins().modelBaseRecordClassGenerated(topLevelClass, introspectedTable)) {
+            answer.add(topLevelClass);
+        }
+        //自定义生成DTO
+        baseRecordType = introspectedTable.getBaseRecordType()+DTO;
+        topLevelClass = getTopLevelClass(plugins, commentGenerator, baseRecordType);
+        answer.add(topLevelClass);
+
+
+        //自定义生成Convert
+        /*baseRecordType = introspectedTable.getBaseRecordType()+CONVERT;
+        topLevelClass = getTopLevelClass(plugins, commentGenerator, baseRecordType);
+        answer.add(topLevelClass);*/
+
+        return answer;
+    }
+
+    private TopLevelClass getTopLevelClass(Plugin plugins, CommentGenerator commentGenerator, String baseRecordType) {
+        //设值类型信息 包名.类名
+        FullyQualifiedJavaType type = new FullyQualifiedJavaType(baseRecordType);
+        //生成实现类
         TopLevelClass topLevelClass = new TopLevelClass(type);
-        topLevelClass.setVisibility(JavaVisibility.PUBLIC);
+        topLevelClass.setVisibility(JavaVisibility.PUBLIC); //类访问级别是public
         commentGenerator.addJavaFileComment(topLevelClass);
 
         FullyQualifiedJavaType superClass = getSuperClass();
-        if (superClass != null) {
+        if (superClass != null) { //设值父类
             topLevelClass.setSuperClass(superClass);
             topLevelClass.addImportedType(superClass);
         }
+        //类头注释
         commentGenerator.addModelClassComment(topLevelClass, introspectedTable);
-
+        //获取本类所有字段
         List<IntrospectedColumn> introspectedColumns = getColumnsInThisClass();
-
+        //table属性 immutable 是否true(是否添加构造函数)
         if (introspectedTable.isConstructorBased()) {
             addParameterizedConstructor(topLevelClass, introspectedTable.getNonBLOBColumns());
-
             if (includeBLOBColumns()) {
                 addParameterizedConstructor(topLevelClass, introspectedTable.getAllColumns());
             }
-
-            if (!introspectedTable.isImmutable()) {
+            if (!introspectedTable.isImmutable()) { //这代码永远都不执行？
                 addDefaultConstructor(topLevelClass);
             }
         }
-
-        String rootClass = getRootClass();
+        String rootClass = getRootClass(); //获取父类
+        //迭代所有字段(生成全局变量)
         for (IntrospectedColumn introspectedColumn : introspectedColumns) {
-            if (RootClassInfo.getInstance(rootClass, warnings)
-                    .containsProperty(introspectedColumn)) {
+            if (RootClassInfo.getInstance(rootClass, warnings).containsProperty(introspectedColumn)) {
                 continue;
             }
 
@@ -95,10 +123,11 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
             if (plugins.modelFieldGenerated(field, topLevelClass,
                     introspectedColumn, introspectedTable,
                     Plugin.ModelClassType.BASE_RECORD)) {
-                topLevelClass.addField(field);
-                topLevelClass.addImportedType(field.getType());
+                topLevelClass.addField(field); //类添加全局变量
+                topLevelClass.addImportedType(field.getType()); //全局变量导包
             }
 
+            //生成get
             Method method = getJavaBeansGetter(introspectedColumn, context, introspectedTable);
             if (plugins.modelGetterMethodGenerated(method, topLevelClass,
                     introspectedColumn, introspectedTable,
@@ -106,6 +135,7 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
                 topLevelClass.addMethod(method);
             }
 
+            //生成set
             if (!introspectedTable.isImmutable()) {
                 method = getJavaBeansSetter(introspectedColumn, context, introspectedTable);
                 if (plugins.modelSetterMethodGenerated(method, topLevelClass,
@@ -115,13 +145,7 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
                 }
             }
         }
-
-        List<CompilationUnit> answer = new ArrayList<CompilationUnit>();
-        if (context.getPlugins().modelBaseRecordClassGenerated(
-                topLevelClass, introspectedTable)) {
-            answer.add(topLevelClass);
-        }
-        return answer;
+        return topLevelClass;
     }
 
     private FullyQualifiedJavaType getSuperClass() {

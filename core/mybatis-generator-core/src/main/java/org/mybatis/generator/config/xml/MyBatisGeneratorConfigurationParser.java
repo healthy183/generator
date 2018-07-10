@@ -1,5 +1,5 @@
 /**
- *    Copyright 2006-2017 the original author or authors.
+ *    Copyright 2006-2018 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -179,11 +179,9 @@ public class MyBatisGeneratorConfigurationParser {
         NodeList nodeList = node.getChildNodes();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node childNode = nodeList.item(i);
-
             if (childNode.getNodeType() != Node.ELEMENT_NODE) {
                 continue;
             }
-
             if ("property".equals(childNode.getNodeName())) { //$NON-NLS-1$
                 parseProperty(context, childNode);
             } else if ("plugin".equals(childNode.getNodeName())) { //$NON-NLS-1$

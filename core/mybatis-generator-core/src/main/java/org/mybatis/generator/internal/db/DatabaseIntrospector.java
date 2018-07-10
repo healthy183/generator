@@ -630,8 +630,7 @@ public class DatabaseIntrospector {
                     tc.getDomainObjectRenamingRule(),
                     context);
 
-            IntrospectedTable introspectedTable = ObjectFactory
-                    .createIntrospectedTable(tc, table, context);
+            IntrospectedTable introspectedTable = ObjectFactory.createIntrospectedTable(tc, table, context);
 
             for (IntrospectedColumn introspectedColumn : entry.getValue()) {
                 introspectedTable.addColumn(introspectedColumn);
