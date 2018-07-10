@@ -37,6 +37,8 @@ import org.mybatis.generator.api.dom.lombok.ConstructorTypeEnums;
 import org.mybatis.generator.api.dom.utils.MyStringUtils;
 import org.mybatis.generator.codegen.AbstractJavaGenerator;
 import org.mybatis.generator.codegen.RootClassInfo;
+import org.mybatis.generator.config.Context;
+import org.mybatis.generator.config.JavaModelGeneratorConfiguration;
 import org.mybatis.generator.internal.util.JavaBeansUtil;
 
 /**
@@ -73,16 +75,19 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
 
         //设值类型信息 包名.类名
         String baseRecordType = introspectedTable.getBaseRecordType();
-        //生成具体类
+        //生成具体PO类
         TopLevelClass topLevelClass = getTopLevelClass(plugins, commentGenerator, baseRecordType);
         //加载插件
         List<CompilationUnit> answer = new ArrayList<CompilationUnit>();
         if (context.getPlugins().modelBaseRecordClassGenerated(topLevelClass, introspectedTable)) {
             answer.add(topLevelClass);
         }
-        //自定义生成DTO
-        baseRecordType = introspectedTable.getBaseRecordType()+DTO;
-        TopLevelClass topLevelClassDTO = getTopLevelClass(plugins, commentGenerator, baseRecordType);
+        //获取targetPackage配置的上级包路径
+        String dtoBaseRecordType = getPreviousPackage();
+        //PO类名
+        String domainObjectName = introspectedTable.getFullyQualifiedTable().getDomainObjectName();
+        dtoBaseRecordType  =  dtoBaseRecordType +"."+DTO.toLowerCase()+"."+domainObjectName+DTO;
+        TopLevelClass topLevelClassDTO = getTopLevelClass(plugins, commentGenerator, dtoBaseRecordType);
         answer.add(topLevelClassDTO);
         //自定义生成Convert
         TopLevelClass convertClazz = createConvertClazz(plugins, commentGenerator);
@@ -90,19 +95,36 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
         return answer;
     }
 
+    private String getPreviousPackage(){
+        String dtoBaseRecordType;
+        JavaModelGeneratorConfiguration javaModelGeneratorConfiguration = context.getJavaModelGeneratorConfiguration();
+        String targetPackage = javaModelGeneratorConfiguration.getTargetPackage();
+        if(targetPackage.lastIndexOf(".") != -1){
+            dtoBaseRecordType = targetPackage.substring(0,targetPackage.lastIndexOf("."));
+        }else{
+            dtoBaseRecordType = targetPackage;
+        }
+        return dtoBaseRecordType;
+    }
+
+
     private TopLevelClass createConvertClazz(Plugin plugins, CommentGenerator commentGenerator) {
-        String baseRecordType;
-        baseRecordType = introspectedTable.getBaseRecordType()+CONVERT;
+
+        String domainObjectName = introspectedTable.getFullyQualifiedTable().getDomainObjectName();
+        String baseRecordType =   getPreviousPackage()+"."+CONVERT.toLowerCase()+"."+domainObjectName+CONVERT;
+        //String baseRecordType = introspectedTable.getBaseRecordType();
         TopLevelClass topLevelClassConvert = getTopLevelConvertClass(plugins, commentGenerator, baseRecordType);
         topLevelClassConvert.addImportedType(LIST_PACKAGE); //导入 java.util.List
         topLevelClassConvert.addImportedType(ARRAY_PACKAGE); //导入 java.util.List
         //请求参数
         String poJavaName = introspectedTable.getBaseRecordType();                       //包名.TableName
+        topLevelClassConvert.addImportedType(poJavaName);
         FullyQualifiedJavaType poJavaType = new FullyQualifiedJavaType(poJavaName);      //TableName对象
         String poShortName =poJavaType.getShortName();
         String po = MyStringUtils.uncapitalize(poJavaType.getShortName());              //tableName
         //返回参数
-        String dtoJavaName = introspectedTable.getBaseRecordType()+DTO;                 //包名.TableName
+        String dtoJavaName = getPreviousPackage()+"."+DTO.toLowerCase()+"."+domainObjectName+DTO;//包名.TableName
+        topLevelClassConvert.addImportedType(dtoJavaName);
         FullyQualifiedJavaType dtoJavaType = new FullyQualifiedJavaType(dtoJavaName);   //TableName对象
         String dtoShortName = dtoJavaType.getShortName();
         String dto = MyStringUtils.uncapitalize(dtoShortName); //tableName
