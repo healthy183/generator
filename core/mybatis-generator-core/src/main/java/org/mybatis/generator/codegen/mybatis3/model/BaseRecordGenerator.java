@@ -15,9 +15,7 @@
  */
 package org.mybatis.generator.codegen.mybatis3.model;
 
-import static org.mybatis.generator.internal.util.JavaBeansUtil.getJavaBeansField;
-import static org.mybatis.generator.internal.util.JavaBeansUtil.getJavaBeansGetter;
-import static org.mybatis.generator.internal.util.JavaBeansUtil.getJavaBeansSetter;
+import static org.mybatis.generator.internal.util.JavaBeansUtil.*;
 import static org.mybatis.generator.internal.util.messages.Messages.getString;
 
 import java.util.ArrayList;
@@ -35,8 +33,11 @@ import org.mybatis.generator.api.dom.java.JavaVisibility;
 import org.mybatis.generator.api.dom.java.Method;
 import org.mybatis.generator.api.dom.java.Parameter;
 import org.mybatis.generator.api.dom.java.TopLevelClass;
+import org.mybatis.generator.api.dom.lombok.ConstructorTypeEnums;
+import org.mybatis.generator.api.dom.utils.MyStringUtils;
 import org.mybatis.generator.codegen.AbstractJavaGenerator;
 import org.mybatis.generator.codegen.RootClassInfo;
+import org.mybatis.generator.internal.util.JavaBeansUtil;
 
 /**
  * 
@@ -73,31 +74,87 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
         }
         //自定义生成DTO
         baseRecordType = introspectedTable.getBaseRecordType()+DTO;
-        topLevelClass = getTopLevelClass(plugins, commentGenerator, baseRecordType);
-        answer.add(topLevelClass);
-
-
+        TopLevelClass topLevelClassDTO = getTopLevelClass(plugins, commentGenerator, baseRecordType);
+        answer.add(topLevelClassDTO);
         //自定义生成Convert
-        /*baseRecordType = introspectedTable.getBaseRecordType()+CONVERT;
-        topLevelClass = getTopLevelClass(plugins, commentGenerator, baseRecordType);
-        answer.add(topLevelClass);*/
+        baseRecordType = introspectedTable.getBaseRecordType()+CONVERT;
+        TopLevelClass topLevelClassConvert = getTopLevelConvertClass(plugins, commentGenerator, baseRecordType);
+        answer.add(topLevelClassConvert);
 
+        //请求参数
+        String requestJavaName = introspectedTable.getBaseRecordType();                       //包名.TableName
+        FullyQualifiedJavaType requestJavaType = new FullyQualifiedJavaType(requestJavaName); //TableName对象
+        String requestShortName =requestJavaType.getShortName();
+        String request = MyStringUtils.uncapitalize(requestJavaType.getShortName());          //tableName
+
+        //返回参数
+        String responseJavaName = introspectedTable.getBaseRecordType()+DTO;                 //包名.TableName
+        FullyQualifiedJavaType returnJavaType = new FullyQualifiedJavaType(responseJavaName);//TableName对象
+        String responseShortName = returnJavaType.getShortName();
+        String response = MyStringUtils.uncapitalize(responseShortName); //tableName
+
+        String toDTO = "toDTO";//生成 toDTO(...)
+        Method toDTOmethod = convertMethod(toDTO,requestJavaType,request,returnJavaType,responseShortName,response);
+        topLevelClassConvert.addMethod(toDTOmethod);
+
+        String toPO = "toPO";//生成 toPo(...)
+        Method method = convertMethod(toPO,returnJavaType,response,requestJavaType,requestShortName,request);
+        topLevelClassConvert.addMethod(method);
         return answer;
     }
 
-    private TopLevelClass getTopLevelClass(Plugin plugins, CommentGenerator commentGenerator, String baseRecordType) {
-        //设值类型信息 包名.类名
-        FullyQualifiedJavaType type = new FullyQualifiedJavaType(baseRecordType);
-        //生成实现类
-        TopLevelClass topLevelClass = new TopLevelClass(type);
-        topLevelClass.setVisibility(JavaVisibility.PUBLIC); //类访问级别是public
-        commentGenerator.addJavaFileComment(topLevelClass);
+    private Method convertMethod(String methodName,
+                                 FullyQualifiedJavaType requestJavaType,
+                                 String request,
+                                 FullyQualifiedJavaType returnJavaType,
+                                 String responseShortName,
+                                 String response) {
+        Method method = new Method();
 
-        FullyQualifiedJavaType superClass = getSuperClass();
-        if (superClass != null) { //设值父类
-            topLevelClass.setSuperClass(superClass);
-            topLevelClass.addImportedType(superClass);
+        method.setVisibility(JavaVisibility.PUBLIC);
+        method.setStatic(true);
+        method.setName(methodName);
+
+        Parameter parameter = new Parameter(requestJavaType,request);
+        method.addParameter(parameter);
+        method.addJavaDocLine("/**"); //$NON-NLS-1$
+        method.addJavaDocLine("* @param "+request);
+        method.addJavaDocLine("* @return "+request+"为null则返回null");
+        method.addJavaDocLine("*/"); //$NON-NLS-1$
+
+        method.setReturnType(returnJavaType);
+
+        StringBuilder sb = new StringBuilder(); //方法体
+        sb.append(responseShortName+ " " + response + " = " + "new " +responseShortName+"();");
+        method.addBodyLine(sb.toString());
+        //获取本类所有字段
+        List<IntrospectedColumn> introspectedColumns = getColumnsInThisClass();
+        for(IntrospectedColumn introspectedColumn : introspectedColumns){
+            String setStr = JavaBeansUtil.getSetterMethodName(introspectedColumn.getJavaProperty());
+            String getStr = JavaBeansUtil.getGetterMethodName(introspectedColumn.getJavaProperty(),
+                    introspectedColumn.getFullyQualifiedJavaType());
+            method.addBodyLine(response+"."+setStr+"("+request+"."+getStr+"());");
         }
+        //返回
+        StringBuilder returnSB = new StringBuilder();
+        returnSB.append("return "); //$NON-NLS-1$
+        returnSB.append(response);
+        returnSB.append(";");
+        method.addBodyLine(returnSB.toString());
+        return method;
+    }
+
+    private TopLevelClass getTopLevelConvertClass(Plugin plugins, CommentGenerator commentGenerator, String baseRecordType) {
+        //通用生成类方法
+        TopLevelClass topLevelClass = getSimpleTopLevelClass(commentGenerator, baseRecordType);
+        //添加Lombok Constructor构造函数
+        commentGenerator.addLombokConstructor(topLevelClass, ConstructorTypeEnums.NOARGS,JavaVisibility.PRIVATE);
+        return topLevelClass;
+    }
+
+    private TopLevelClass getTopLevelClass(Plugin plugins, CommentGenerator commentGenerator, String baseRecordType) {
+        //通用生成类方法
+        TopLevelClass topLevelClass = getSimpleTopLevelClass(commentGenerator, baseRecordType);
         //类头注释
         commentGenerator.addModelClassComment(topLevelClass, introspectedTable);
         //获取本类所有字段
@@ -144,6 +201,28 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
                     topLevelClass.addMethod(method);
                 }
             }
+        }
+        return topLevelClass;
+    }
+
+    /**
+     * 通用生成类方法
+     * @param commentGenerator
+     * @param baseRecordType
+     * @return
+     */
+    private TopLevelClass getSimpleTopLevelClass(CommentGenerator commentGenerator, String baseRecordType) {
+        //设值类型信息 包名.类名
+        FullyQualifiedJavaType type = new FullyQualifiedJavaType(baseRecordType);
+        //生成实现类
+        TopLevelClass topLevelClass = new TopLevelClass(type);
+        topLevelClass.setVisibility(JavaVisibility.PUBLIC); //类访问级别是public
+        commentGenerator.addJavaFileComment(topLevelClass);
+
+        FullyQualifiedJavaType superClass = getSuperClass();
+        if (superClass != null) { //设值父类
+            topLevelClass.setSuperClass(superClass);
+            topLevelClass.addImportedType(superClass);
         }
         return topLevelClass;
     }

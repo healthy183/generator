@@ -1,5 +1,5 @@
 /**
- *    Copyright 2006-2017 the original author or authors.
+ *    Copyright 2006-2018 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -18,13 +18,8 @@ package org.mybatis.generator.api;
 import java.util.Properties;
 import java.util.Set;
 
-import org.mybatis.generator.api.dom.java.CompilationUnit;
-import org.mybatis.generator.api.dom.java.Field;
-import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
-import org.mybatis.generator.api.dom.java.InnerClass;
-import org.mybatis.generator.api.dom.java.InnerEnum;
-import org.mybatis.generator.api.dom.java.Method;
-import org.mybatis.generator.api.dom.java.TopLevelClass;
+import org.mybatis.generator.api.dom.java.*;
+import org.mybatis.generator.api.dom.lombok.ConstructorTypeEnums;
 import org.mybatis.generator.api.dom.xml.XmlElement;
 
 /**
@@ -279,4 +274,12 @@ public interface CommentGenerator {
      */
     void addClassAnnotation(InnerClass innerClass, IntrospectedTable introspectedTable,
             Set<FullyQualifiedJavaType> imports);
+
+
+    /**
+     * 类头添加Lombok构造方法
+     * @param constructorType
+     * @param accessLevel
+     */
+    void addLombokConstructor(TopLevelClass topLevelClass, ConstructorTypeEnums constructorType, JavaVisibility accessLevel);
 }
