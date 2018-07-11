@@ -106,6 +106,12 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
         return answer;
     }
 
+    /**
+     * 创建Mangager
+     * @param plugins
+     * @param commentGenerator
+     * @return
+     */
     private TopLevelClass createManagerClazz(Plugin plugins, CommentGenerator commentGenerator) {
 
         String domainObjectName = introspectedTable.getFullyQualifiedTable().getDomainObjectName();
@@ -131,7 +137,12 @@ public class BaseRecordGenerator extends AbstractJavaGenerator {
     }
 
 
-
+    /**
+     * 创建转换器
+     * @param plugins
+     * @param commentGenerator
+     * @return
+     */
     private TopLevelClass createConvertClazz(Plugin plugins, CommentGenerator commentGenerator) {
 
         String domainObjectName = introspectedTable.getFullyQualifiedTable().getDomainObjectName();

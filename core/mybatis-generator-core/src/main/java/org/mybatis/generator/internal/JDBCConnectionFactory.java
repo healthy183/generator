@@ -1,5 +1,5 @@
 /**
- *    Copyright 2006-2017 the original author or authors.
+ *    Copyright 2006-2018 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -55,6 +55,8 @@ public class JDBCConnectionFactory implements ConnectionFactory {
         connectionURL = config.getConnectionURL();
         driverClass = config.getDriverClass();
         otherProperties = config.getProperties();
+        //获取oracle注释(可通过xml配置实现)
+        //otherProperties.setProperty("remarksReporting","true");
     }
 
     /**

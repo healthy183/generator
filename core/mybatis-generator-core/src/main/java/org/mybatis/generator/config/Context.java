@@ -450,6 +450,8 @@ public class Context extends PropertyHolder {
         try {
             callback.startTask(getString("Progress.0")); //$NON-NLS-1$
             connection = getConnection();
+
+
             //连接数据库
             DatabaseIntrospector databaseIntrospector = new DatabaseIntrospector(
                     this, connection.getMetaData(), javaTypeResolver, warnings);
