@@ -1,5 +1,5 @@
 /**
- *    Copyright 2006-2017 the original author or authors.
+ *    Copyright 2006-2018 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.mybatis.generator.api.dom.java;
 
 import org.mybatis.generator.api.dom.OutputUtilities;
+import org.mybatis.generator.api.dom.utils.MyStringUtils;
 
 public class Field extends JavaElement {
     private FullyQualifiedJavaType type;
@@ -73,7 +74,8 @@ public class Field extends JavaElement {
         addFormattedAnnotations(sb, indentLevel);
 
         OutputUtilities.javaIndent(sb, indentLevel);
-        sb.append(getVisibility().getValue());
+        sb.append(MyStringUtils.rightPad(getVisibility().getValue(),13," "));
+
 
         if (isStatic()) {
             sb.append("static "); //$NON-NLS-1$
@@ -91,7 +93,7 @@ public class Field extends JavaElement {
             sb.append("volatile "); //$NON-NLS-1$
         }
 
-        sb.append(JavaDomUtils.calculateTypeName(compilationUnit, type));
+        sb.append(MyStringUtils.rightPad(JavaDomUtils.calculateTypeName(compilationUnit, type),16," "));
 
         sb.append(' ');
         sb.append(name);

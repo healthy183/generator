@@ -40,4 +40,27 @@ public class MyStringUtils {
             return str;
         }
     }
+
+    /**
+     * @param str
+     * @param length
+     * @param padStr 仅仅支持单字节
+     * @return
+     */
+    public static String rightPad(String str,int length,String padStr) {
+        if(str== null){
+            return null;
+        }
+        if(str.length() >= length){
+            return str+" ";
+        }
+        StringBuilder stringBuilder = new StringBuilder(str);
+        int appendStr =  length - str.length();
+        for(int i =0;i<appendStr;i++){
+            stringBuilder.append(padStr);
+        }
+        return stringBuilder.toString();
+    }
+
+
 }
